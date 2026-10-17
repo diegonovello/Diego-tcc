@@ -7,6 +7,7 @@ namespace ConfigMov {
 constexpr bool GEOMETRIA_CONFIRMADA = false; // raio efetivo, reducao, offset e microstep
 constexpr bool SENTIDOS_CONFIRMADOS = false; // confirmar A, B e C no teste individual
 constexpr bool RETORNO_E_TENSAO_CONFIRMADOS = false; // liberar cabo NAO empurra o segmento
+constexpr bool FONTE_CONFIRMADA = false; // um motor em movimento + consumo dos drivers parados
 constexpr uint8_t STEP[3] = {2, 3, 4}; // PUL-; PUL+ em 5 V (anodo comum)
 constexpr uint8_t DIR[3] = {5, 6, 7}; // DIR-; DIR+ em 5 V
 // true: LOW em DIR- significa recolher; false inverte SOMENTE o sentido eletrico.
@@ -17,13 +18,14 @@ constexpr uint8_t INTERTRAVA_PIN = 8;
 // Esta intertrava de software NAO e parada de emergencia certificada.
 constexpr uint32_t PULSO_US = 40; // LOW ativo >=40 us; nunca encurtar no aborto
 constexpr uint32_t DIR_ESPERA_US = 100;
-constexpr float VELOCIDADE_INICIAL = 8.0f; // ticks dominantes/s
+constexpr uint32_t PAUSA_ENTRE_MOTORES_US = 1000000UL; // sem pulsos entre etapas; mantem torque
+constexpr float VELOCIDADE_INICIAL = 8.0f; // pulsos/s do unico motor em movimento
 constexpr float VELOCIDADE_MAXIMA = 60.0f; // cada motor <= este limite
-constexpr float ACELERACAO = 20.0f; // ticks dominantes/s^2; rampa discreta simetrica
+constexpr float ACELERACAO = 20.0f; // pulsos/s^2; rampa independente por motor
 constexpr int32_t LIMITE_ABSOLUTO = 600; // por motor, relativo ao corpo reto
 constexpr uint32_t LIMITE_DELTA = 600; // por motor e por comando
 constexpr uint32_t TEMPO_MAXIMO_MS = 120000;
 inline bool confirmada() {
-  return GEOMETRIA_CONFIRMADA && SENTIDOS_CONFIRMADOS && RETORNO_E_TENSAO_CONFIRMADOS;
+  return GEOMETRIA_CONFIRMADA && SENTIDOS_CONFIRMADOS && RETORNO_E_TENSAO_CONFIRMADOS && FONTE_CONFIRMADA;
 }
 }

@@ -1,6 +1,6 @@
 # Cinemática XY com movimento — protótipo experimental
 
-Esta é uma **nova versão separada**. `cinematica_xy/` continua sendo a simulação sem saídas e `teste_bancada_uno/` continua sendo o teste individual. O novo sketch calcula a cinemática e pode gerar pulsos reais para três DM556T, com DDA coordenado e rampa discreta. Foi elaborado com auxílio de IA (Codex/OpenAI).
+Esta é uma **nova versão separada**. `cinematica_xy/` continua sendo a simulação sem saídas e `teste_bancada_uno/` continua sendo o teste individual. O novo sketch calcula a cinemática e pode gerar pulsos reais para três DM556T, exclusivamente em sequência **M1 (base/A) → M2 (intermediário/B) → M3 (distal/C)**, com rampa por motor e pausa entre etapas. Nunca aplica pulsos a dois motores simultaneamente. Foi elaborado com auxílio de IA (Codex/OpenAI).
 
 **Não é controle PI, não mede posição, não realiza homing automático e não detecta perda de passos. Não foi validado no robô físico.** Uma trajetória interpolada nos motores não garante uma reta cartesiana nem ausência de colisão. Na montagem vertical, sustentar o mecanismo de forma segura; o modelo não inclui gravidade.
 
@@ -8,18 +8,19 @@ Esta é uma **nova versão separada**. `cinematica_xy/` continua sendo a simula�
 
 - `cinematica_xy_movimento.ino`: comandos, busca inversa, estados e geração dos sinais.
 - `ConfiguracaoMovimento.h`: pinagem, sentidos, confirmações, velocidade e limites.
-- `PlanejadorPassos.h`: distribuição DDA dos passos e perfil de velocidade.
+- `PlanejadorPassos.h`: sequência exclusiva M1 → M2 → M3 e perfil de velocidade por motor.
 - `ModeloPlanar.h` e `Transmissao.h`: geometria vertical e transmissão cumulativa.
 - `validar_modelo.py`: referência numérica desktop.
 - `validar_firmware.cjs`: testes do HEX no emulador AVR8js; não conecta ao Arduino.
 
 ## Bloqueios de partida
 
-O programa inicia desarmado e sem referência. Em `ConfiguracaoMovimento.h`, as três confirmações são `false`:
+O programa inicia desarmado e sem referência. Em `ConfiguracaoMovimento.h`, as quatro confirmações são `false`:
 
 1. `GEOMETRIA_CONFIRMADA`: conferir redução real, raio efetivo do carretel, afastamento, microstepping e limites. Os valores 3:1 e 18,98 mm ainda são preliminares.
 2. `SENTIDOS_CONFIRMADOS`: testar A/B/C individualmente e ajustar `DIR_RECOLHER_LOW[]` para que positivo realmente recolha cada cabo.
 3. `RETORNO_E_TENSAO_CONFIRMADOS`: verificar que liberar cabo permite retorno e mantém tensão. Um cabo não empurra o segmento.
+4. `FONTE_CONFIRMADA`: conferir a fonte para um motor em movimento mais os drivers parados. A sequência não elimina a corrente de retenção.
 
 **Somente após as verificações físicas correspondentes** modificar essas confirmações e recompilar. Não mudar os flags apenas para contornar o bloqueio. Com os valores distribuídos, os cálculos e as prévias funcionam, mas `armar` e `mover` não liberam pulsos.
 
@@ -70,7 +71,7 @@ mover
 - `caso 3` prepara exatamente as flexões do desenho. `caso 1` a `caso 6` correspondem aos seis casos documentados.
 - Alternativamente, enviar `X;Y` em cm e conferir a prévia; `mover` é sempre uma confirmação separada.
 - Começar com flexões pequenas e movimentos limitados; não assumir que um desenho teórico é seguro ou executável na montagem real.
-- Aguardar a mensagem de conclusão antes de outro comando. Os destinos são absolutos em relação ao reto; o programa calcula a diferença desde os pulsos já comandados.
+- Aguardar a mensagem de conclusão antes de outro comando. A ordem é sempre M1 → M2 → M3, inclusive no retorno; deltas nulos são pulados. Há pausa de 1 s sem pulsos entre motores, que não mede o assentamento mecânico. Os destinos são absolutos em relação ao reto; o programa calcula a diferença desde os pulsos já comandados.
 - Após conclusão, o estado mostra uma **estimativa** reconstruída dos pulsos, incluindo arredondamento. Não é uma posição medida.
 
 ## Parada e recuperação
@@ -85,7 +86,7 @@ mover
 ## Parâmetros iniciais de software
 
 - Saídas PUL− ativas em LOW, repouso HIGH; pulso ativo nominal de pelo menos 40 µs, direção estabilizada por 100 µs.
-- Rampa discreta simétrica: velocidade inicial de 8 e máxima de 60 ticks dominantes/s; aceleração de 20 ticks/s². Cada motor recebe no máximo um pulso por tick.
+- Rampa discreta independente: velocidade inicial de 8 e máxima de 60 pulsos/s; aceleração de 20 pulsos/s². Somente um motor recebe pulsos por etapa.
 - Limite absoluto de ±600 pulsos por motor e deslocamento máximo de 600 pulsos por motor/comando. São limites preliminares de software, não limites mecânicos calibrados.
 - Tempo máximo de 120 s por comando. Não há recuperação de atrasos por rajadas de pulsos.
 
@@ -101,5 +102,11 @@ python cinematica_xy_movimento/validar_modelo.py
 O teste `validar_firmware.cjs` usa `avr8js@0.21.1` para executar dois HEXs: o distribuído com confirmações falsas e uma cópia temporária com confirmações verdadeiras apenas no emulador. Ele verifica bloqueios, entradas inválidas, contagem nos GPIO, direções, término dos pulsos e aborto/intertrava. O teste não deve modificar o arquivo de configuração distribuído e não deve gravar a cópia liberada no hardware.
 
 Para reproduzir, instalar as dependências de teste com `npm install --ignore-scripts` nesta pasta e executar `npm run test:firmware -- caminho/do/bloqueado.hex caminho/do/temporario.hex`. Os resultados observados e as limitações estão em `VERIFICACAO.md`.
+
+## Limites da sequência e da alimentação
+
+Os drivers parados não são desabilitados automaticamente: podem consumir corrente de retenção e manter cabos tensionados e o robô sustentado. Mover um motor por vez não comprova que a fonte seja suficiente. Conferir a capacidade e a queda de tensão da fonte, corrente de repouso e aquecimento. Não desenergizar motores indiscriminadamente com o robô vertical.
+
+As poses intermediárias diferem do movimento coordenado. Antes de iniciar, o programa reconstrói as flexões nos extremos de cada etapa e rejeita qualquer etapa fora de ±45°. O mapa ideal é linear em passos, mas não detecta colisão ou falta de tensão. Uma transição entre dois casos válidos pode exigir alvos intermediários planejados: por exemplo, caso 4 → caso 5 é bloqueado. Não contornar esse bloqueio aumentando limites sem verificar a mecânica.
 
 Compilar e emular não valida corrente, torque, folgas, retorno, tensão, colisão, segurança funcional nem precisão física. Não se deve apresentar esses testes como validação experimental do robô.

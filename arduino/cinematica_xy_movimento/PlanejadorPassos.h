@@ -2,35 +2,38 @@
 #include <stdint.h>
 #include <math.h>
 
-// DDA/Bresenham em tres eixos. Nao acessa GPIO: cada bit de proximo() pede
-// exatamente um pulso no motor correspondente. Nenhum motor recebe rajadas.
-// Interpola destinos de cabos/motores, NAO uma reta cartesiana da ponta.
+// Exclusao mutua: completa M1(base/A), depois M2(B), depois M3(distal/C).
+// Pula somente motores cujo delta e zero. proximo() retorna no maximo UM bit.
+// Nao existe modo simultaneo. O chamador encerra o ultimo pulso antes de avancar.
 namespace Planejador {
-struct DDA {
-  uint32_t total = 0, feitos = 0, modulo[3] = {}, acumulador[3] = {};
+struct Sequencial {
+  uint32_t total = 0, feitos = 0, modulo[3] = {};
   int8_t sentido[3] = {};
+  uint8_t motor = 0;
+  bool selecionar() {
+    while (motor < 3 && modulo[motor] == 0) ++motor;
+    feitos = 0;
+    total = motor < 3 ? modulo[motor] : 0;
+    return motor < 3;
+  }
   void iniciar(const int32_t *origem, const int32_t *destino) {
     total = feitos = 0;
     for (uint8_t i = 0; i < 3; ++i) {
       const int32_t delta = destino[i] - origem[i]; // limites conferidos antes
       sentido[i] = delta > 0 ? 1 : (delta < 0 ? -1 : 0);
       modulo[i] = delta < 0 ? uint32_t(-delta) : uint32_t(delta);
-      acumulador[i] = 0;
-      if (modulo[i] > total) total = modulo[i];
     }
+    motor = 0;
+    selecionar();
+  }
+  bool avancar() {
+    ++motor;
+    return selecionar();
   }
   uint8_t proximo() {
     if (feitos >= total) return 0;
-    uint8_t mascara = 0;
-    for (uint8_t i = 0; i < 3; ++i) {
-      acumulador[i] += modulo[i];
-      if (acumulador[i] >= total) {
-        acumulador[i] -= total;
-        mascara |= uint8_t(1U << i);
-      }
-    }
     ++feitos;
-    return mascara;
+    return uint8_t(1U << motor);
   }
 };
 

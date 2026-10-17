@@ -7,6 +7,7 @@
 #include "ConfiguracaoMovimento.h"
 #include "PlanejadorPassos.h"
 
+// VERSAO EXPERIMENTAL SEQUENCIAL: somente M1 -> M2 -> M3, nunca simultaneos.
 // VERSAO EXPERIMENTAL COM SAIDAS REAIS. Elaborada com auxilio de IA (Codex/OpenAI).
 // Preserva o sketch cinematica_xy como simulacao separada.
 // X lateral e Y vertical, em cm. Posicao reta: 0;13.653.
@@ -26,7 +27,7 @@ uint16_t iteracao = 0;
 float qAtual[3] = {}, qBusca[3] = {}, qDestino[3] = {};
 Ponto alvo = {0, 0};
 int32_t posicao[3] = {}, destino[3] = {};
-Planejador::DDA dda;
+Planejador::Sequencial sequencia;
 uint8_t pulsoAtivo = 0;
 uint32_t inicioPulso = 0, ultimoTick = 0, intervalo = 0, inicioMovimento = 0;
 enum Evento : uint8_t { NENHUM, CONCLUIDO, CANCELADO, INTERTRAVA, TEMPO_ESGOTADO };
@@ -82,7 +83,7 @@ void estado() {
 
 void ajuda() {
   Serial.println(F("UNO XY COM MOVIMENTO EXPERIMENTAL - 115200, New Line."));
-  Serial.println(F("X;Y em cm -> calcula PREVIA; mover -> executa se armado."));
+  Serial.println(F("X;Y em cm -> PREVIA; mover -> M1(base), M2, M3(distal)."));
   Serial.println(F("caso 1..6 -> prepara flexoes dos desenhos, sem IK."));
   Serial.println(F("referenciar RETO: confirma MANUALMENTE robo reto e tensionado."));
   Serial.println(F("armar | desarmar | estado | config | ?"));
@@ -129,6 +130,25 @@ bool preparar(const float *q) {
   return true;
 }
 
+// Mover M1 sem compensar M2/M3 altera temporariamente suas flexoes.
+// O mapa ideal e linear em passos: basta conferir os extremos de cada etapa.
+// Isso NAO detecta colisao, folga ou falta de tensao na montagem real.
+bool validarEtapasSequenciais() {
+  int32_t p[3] = {posicao[0], posicao[1], posicao[2]};
+  for (uint8_t etapa = 0; etapa < 4; ++etapa) {
+    if (etapa) p[etapa-1] = destino[etapa-1];
+    float anterior = 0;
+    for (uint8_t i = 0; i < 3; ++i) {
+      const float soma = (float(p[i]) / Transmissao::PULSOS_POR_CM)
+                         / Transmissao::AFASTAMENTO_CABO_CM;
+      const float flexao = soma - anterior;
+      if (!isfinite(flexao) || fabsf(flexao) > LIMITE_RAD) return false;
+      anterior = soma;
+    }
+  }
+  return true;
+}
+
 void iniciarMovimento() {
   if (evento != NENHUM) {
     Serial.println(F("Aguarde o relatorio de estado e reenvie mover.")); return;
@@ -143,22 +163,27 @@ void iniciarMovimento() {
       Serial.println(F("ERRO: deslocamento excede limite por comando.")); return;
     }
   }
-  dda.iniciar(posicao, destino);
+  if (!validarEtapasSequenciais()) {
+    previa = false;
+    Serial.println(F("BLOQUEADO: etapa M1/M2/M3 excede flexao intermediaria."));
+    Serial.println(F("Necessario planejar alvos intermediarios e conferir cabos.")); return;
+  }
+  sequencia.iniciar(posicao, destino);
   previa = false;
-  if (!dda.total) {
+  if (!sequencia.total) {
     Serial.println(F("Sem pulsos adicionais: destino ja comandado.")); return;
   }
-  Serial.println(F("MOVENDO. ! ou x para abortar; demais entradas ignoradas."));
+  Serial.println(F("MOVENDO SEQUENCIAL M1 -> M2 -> M3. ! ou x aborta."));
   Serial.flush(); // termina as mensagens ANTES de iniciar o temporizador
   for (uint8_t i = 0; i < 3; ++i) {
-    const bool low = dda.sentido[i] > 0 ? ConfigMov::DIR_RECOLHER_LOW[i]
+    const bool low = sequencia.sentido[i] > 0 ? ConfigMov::DIR_RECOLHER_LOW[i]
                                         : !ConfigMov::DIR_RECOLHER_LOW[i];
     digitalWrite(ConfigMov::DIR[i], low ? LOW : HIGH);
   }
   delayMicroseconds(ConfigMov::DIR_ESPERA_US);
   inicioMovimento = millis();
   ultimoTick = micros();
-  intervalo = Planejador::intervaloUs(0, dda.total, ConfigMov::VELOCIDADE_INICIAL,
+  intervalo = Planejador::intervaloUs(0, sequencia.total, ConfigMov::VELOCIDADE_INICIAL,
                                     ConfigMov::VELOCIDADE_MAXIMA, ConfigMov::ACELERACAO);
   movendo = true;
 }
@@ -175,7 +200,15 @@ void atualizarMovimento() {
     for (uint8_t i = 0; i < 3; ++i)
       if (pulsoAtivo & (1U << i)) digitalWrite(ConfigMov::STEP[i], HIGH);
     pulsoAtivo = 0;
-    if (dda.feitos == dda.total) {
+    if (sequencia.feitos == sequencia.total) {
+      if (sequencia.avancar()) {
+        // A ultima entrada PUL voltou a HIGH antes da troca. Nenhuma sobreposicao.
+        ultimoTick = micros();
+        intervalo = ConfigMov::PAUSA_ENTRE_MOTORES_US + Planejador::intervaloUs(
+          0, sequencia.total, ConfigMov::VELOCIDADE_INICIAL,
+          ConfigMov::VELOCIDADE_MAXIMA, ConfigMov::ACELERACAO);
+        return;
+      }
       movendo = false;
       atualizarEstimativa();
       evento = CONCLUIDO;
@@ -185,14 +218,14 @@ void atualizarMovimento() {
   // Subtracao unsigned permanece valida na virada de micros(). Sem catch-up:
   // se o loop atrasar, nao despejar pulsos acumulados para recuperar o tempo.
   if (uint32_t(agora - ultimoTick) < intervalo) return;
-  pulsoAtivo = dda.proximo();
+  pulsoAtivo = sequencia.proximo();
   for (uint8_t i = 0; i < 3; ++i) if (pulsoAtivo & (1U << i)) {
     digitalWrite(ConfigMov::STEP[i], LOW);
-    posicao[i] += dda.sentido[i]; // conta somente pulsos efetivamente iniciados
+    posicao[i] += sequencia.sentido[i]; // conta somente pulsos efetivamente iniciados
   }
   inicioPulso = ultimoTick = micros();
-  if (dda.feitos < dda.total)
-    intervalo = Planejador::intervaloUs(dda.feitos, dda.total, ConfigMov::VELOCIDADE_INICIAL,
+  if (sequencia.feitos < sequencia.total)
+    intervalo = Planejador::intervaloUs(sequencia.feitos, sequencia.total, ConfigMov::VELOCIDADE_INICIAL,
                                       ConfigMov::VELOCIDADE_MAXIMA, ConfigMov::ACELERACAO);
 }
 
@@ -202,10 +235,11 @@ void tratarLinha(char *s) {
   if (!strcmp(s, "?")) { ajuda(); return; }
   if (!strcmp(s, "estado")) { estado(); return; }
   if (!strcmp(s, "config")) {
-    Serial.print(F("Geometria/sentidos/retorno confirmados: "));
+    Serial.print(F("Geometria/sentidos/retorno/fonte confirmados: "));
     Serial.print(ConfigMov::GEOMETRIA_CONFIRMADA); Serial.print('/');
     Serial.print(ConfigMov::SENTIDOS_CONFIRMADOS); Serial.print('/');
-    Serial.println(ConfigMov::RETORNO_E_TENSAO_CONFIRMADOS);
+    Serial.print(ConfigMov::RETORNO_E_TENSAO_CONFIRMADOS); Serial.print('/');
+    Serial.println(ConfigMov::FONTE_CONFIRMADA);
     Serial.print(F("Pulsos/mm de cabo: ")); Serial.println(Transmissao::PULSOS_POR_CM / 10, 5);
     Serial.print(F("Limite absoluto/delta: ")); Serial.print(ConfigMov::LIMITE_ABSOLUTO);
     Serial.print('/'); Serial.println(ConfigMov::LIMITE_DELTA);
