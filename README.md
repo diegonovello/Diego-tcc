@@ -46,7 +46,7 @@ Os materiais anteriores de nove juntas independentes foram preservados. A implem
 | --- | --- |
 | `arduino/teste_bancada_uno/teste_bancada_uno.ino` | Teste lento com Uno e DM556T: seleciona um motor e gera 10 ou 100 pulsos, sem cinemática ou PI. |
 | `arduino/cinematica_xy/cinematica_xy.ino` | Entrada cartesiana e cálculo da cinemática inversa, cabos e passos ideais; **não gera pulsos**. |
-| `arduino/cinematica_xy_movimento/` | Nova versão experimental com prévia, confirmação `mover`, pulsos coordenados e rampa; bloqueada por padrão até conferir a calibração e a intertrava. |
+| `arduino/cinematica_xy_movimento/` | Nova versão experimental com prévia, confirmação `mover`, pulsos sequenciais M1 → M2 → M3 e rampa; bloqueada por padrão até conferir a calibração e a intertrava. |
 | `arduino/cinematica_xy/ModeloPlanar.h` | Cinemática direta, Jacobiano 2x3 e solução amortecida para três segmentos de três juntas. |
 | `arduino/cinematica_xy/Transmissao.h` | Aproximação cumulativa do recolhimento dos cabos e conversão em destinos nominais de passos. |
 | `arduino/cinematica_xy/validar_modelo.py` | Referência numérica desktop para conferir Jacobiano, inversa e transmissão; não executa o binário AVR. |
@@ -79,9 +79,9 @@ Os programas cartesianos usam 115200 baud e final de linha. Exemplos: `0;13.653`
 
 ### Nova versão com movimento real
 
-O sketch [cinematica_xy_movimento](arduino/cinematica_xy_movimento/) preserva os dois programas anteriores. Ele calcula a prévia e executa os pulsos somente após `mover`, com referência manual, armação explícita, limites, coordenação DDA e rampa discreta. Também aceita `caso 1` até `caso 6` para preparar as flexões exatas dos desenhos.
+O sketch [cinematica_xy_movimento](arduino/cinematica_xy_movimento/) preserva os dois programas anteriores. Ele calcula a prévia e executa os pulsos somente após `mover`, com referência manual, armação explícita, limites, sequência exclusiva M1 (base/A) → M2 (intermediário/B) → M3 (distal/C) e rampa por motor. Não existe opção de pulsos simultâneos; as flexões intermediárias também são conferidas. Também aceita `caso 1` até `caso 6` para preparar as flexões exatas dos desenhos.
 
-**Antes de usar:** ler o [guia completo](arduino/cinematica_xy_movimento/LEIA_ME.md). As três confirmações em `ConfiguracaoMovimento.h` são distribuídas como `false`; só devem ser alteradas depois de verificar fisicamente geometria, sentidos, retorno e tensão. Há uma intertrava lógica por contato NC entre D8 e GND; ela não substitui o corte físico independente da potência.
+**Antes de usar:** ler o [guia completo](arduino/cinematica_xy_movimento/LEIA_ME.md). As quatro confirmações em `ConfiguracaoMovimento.h` são distribuídas como `false`; só devem ser alteradas depois de verificar fisicamente geometria, sentidos, retorno/tensão e capacidade da fonte. Os drivers parados ainda podem consumir corrente; seu torque não é cortado automaticamente. Há uma intertrava lógica por contato NC entre D8 e GND; ela não substitui o corte físico independente da potência.
 
 O arquivo [VERIFICACAO.md](arduino/cinematica_xy_movimento/VERIFICACAO.md) registra a compilação e os testes dos HEXs em AVR8js. A emulação conferiu contagens de GPIO e bloqueios, mas não valida driver, motores ou posicionamento físico. O código não executa PI, não lê encoder e não realiza homing automático. Nenhum firmware foi gravado automaticamente no Arduino.
 
