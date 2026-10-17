@@ -2,7 +2,7 @@
 
 Os dois programas para Arduino Uno, o script de conferência numérica e o script que gera as seis configurações planares foram elaborados com auxílio de inteligência artificial, por meio do Codex (OpenAI), a partir das informações e decisões de projeto fornecidas pelo autor. A ferramenta auxiliou na escrita e nos comentários do código, na adaptação do modelo para três segmentos, nos testes numéricos, na geração dos desenhos e na redação explicativa correspondente.
 
-Esta declaração não atribui a IA às publicações científicas citadas nem afirma que todos os arquivos antigos do repositório tiveram a mesma origem. Seu escopo são os arquivos acrescentados em `arduino/` e `src/tcc2/` e as figuras em `figuras/tcc2/`.
+Esta declaração não atribui a IA às publicações científicas citadas nem afirma que todos os arquivos antigos do repositório tiveram a mesma origem. Seu escopo são os arquivos acrescentados em `arduino/` e `src/tcc2/` e os desenhos produzidos localmente pelo gerador. As imagens prontas não são distribuídas no repositório.
 
 ## Verificações realizadas
 
