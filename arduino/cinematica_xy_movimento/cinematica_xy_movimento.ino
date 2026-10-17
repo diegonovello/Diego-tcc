@@ -22,6 +22,10 @@ char linha[64];
 uint8_t tamanho = 0;
 bool excesso = false, referenciado = false, armado = false;
 bool calculando = false, previa = false, movendo = false;
+// movendo = trajeto pendente; liberado = tecla mantida + heartbeat recente.
+// 0x11 permite por 150 ms; 0x13 pausa. Espaco ASCII NAO e permissao.
+bool liberado = false;
+uint32_t ultimaPermissao = 0, tempoAtivo = 0, ultimaContagem = 0;
 uint8_t tentativa = 0;
 uint16_t iteracao = 0;
 float qAtual[3] = {}, qBusca[3] = {}, qDestino[3] = {};
@@ -46,6 +50,7 @@ void inativarPulsos() {
 void interromper(Evento motivo) {
   inativarPulsos();
   movendo = calculando = previa = armado = referenciado = false;
+  liberado = false;
   tamanho = 0;
   excesso = false;
   evento = motivo;
@@ -90,6 +95,30 @@ void ajuda() {
   Serial.println(F("! sem Enter ou x: aborta, desarma e exige nova referencia."));
   Serial.println(F("Durante movimento, outros caracteres sao ignorados."));
   Serial.println(F("ENA nao e controlado; parar pulsos NAO corta potencia."));
+  Serial.println(F("mover apenas prepara trajeto PAUSADO. Usar painel Python e manter ESPACO."));
+  Serial.println(F("Soltar/foco perdido/heartbeat ausente: pausa. Monitor Serial nao detecta soltar."));
+}
+
+void pausar() {
+  inativarPulsos(); // termina o pulso ja iniciado; nao inicia outro
+  liberado = false;
+  atualizarEstimativa();
+}
+
+void permitir() {
+  if (!movendo || !armado || !referenciado || !intertravaFechada()) return;
+  ultimaPermissao = millis();
+  if (liberado) return;
+  // Replanejar a partir dos pulsos JA emitidos conserva ordem e destino.
+  // Inclusive se a pausa ocorreu no ultimo pulso de uma etapa.
+  sequencia.iniciar(posicao, destino);
+  if (!sequencia.total) { movendo = false; evento = CONCLUIDO; return; }
+  ultimoTick = micros();
+  intervalo = ConfigMov::PAUSA_ENTRE_MOTORES_US + Planejador::intervaloUs(
+    0, sequencia.total, ConfigMov::VELOCIDADE_INICIAL,
+    ConfigMov::VELOCIDADE_MAXIMA, ConfigMov::ACELERACAO);
+  ultimaContagem = millis();
+  liberado = true;
 }
 
 bool numeros(char *s, float &v) {
@@ -173,7 +202,7 @@ void iniciarMovimento() {
   if (!sequencia.total) {
     Serial.println(F("Sem pulsos adicionais: destino ja comandado.")); return;
   }
-  Serial.println(F("MOVENDO SEQUENCIAL M1 -> M2 -> M3. ! ou x aborta."));
+  Serial.println(F("TRAJETO PAUSADO: manter ESPACO no painel. M1 -> M2 -> M3; ! aborta."));
   Serial.flush(); // termina as mensagens ANTES de iniciar o temporizador
   for (uint8_t i = 0; i < 3; ++i) {
     const bool low = sequencia.sentido[i] > 0 ? ConfigMov::DIR_RECOLHER_LOW[i]
@@ -186,12 +215,21 @@ void iniciarMovimento() {
   intervalo = Planejador::intervaloUs(0, sequencia.total, ConfigMov::VELOCIDADE_INICIAL,
                                     ConfigMov::VELOCIDADE_MAXIMA, ConfigMov::ACELERACAO);
   movendo = true;
+  liberado = false; // nunca reaproveitar permissao de um trajeto anterior
+  tempoAtivo = 0;
 }
 
 void atualizarMovimento() {
   if (!movendo) return;
   if (!intertravaFechada()) { interromper(INTERTRAVA); return; }
-  if (uint32_t(millis() - inicioMovimento) > ConfigMov::TEMPO_MAXIMO_MS) {
+  if (!liberado) return;
+  const uint32_t agoraMs = millis();
+  tempoAtivo += uint32_t(agoraMs - ultimaContagem);
+  ultimaContagem = agoraMs;
+  if (uint32_t(agoraMs - ultimaPermissao) >= ConfigMov::PERMISSAO_MS) {
+    pausar(); return;
+  }
+  if (tempoAtivo > ConfigMov::TEMPO_MAXIMO_MS) {
     interromper(TEMPO_ESGOTADO); return;
   }
   uint32_t agora = micros();
@@ -210,6 +248,7 @@ void atualizarMovimento() {
         return;
       }
       movendo = false;
+      liberado = false;
       atualizarEstimativa();
       evento = CONCLUIDO;
     }
@@ -311,11 +350,12 @@ void setup() {
 }
 
 void loop() {
-  atualizarMovimento();
   if ((armado || referenciado) && !intertravaFechada()) interromper(INTERTRAVA);
-  // Limita a leitura por passagem para uma rajada serial nao bloquear o scheduler.
-  for (uint8_t lidos = 0; lidos < 16 && Serial.available(); ++lidos) {
+  // Processar controles ANTES de novos pulsos; drenar tambem uma pausa enfileirada.
+  for (uint8_t lidos = 0; lidos < 64 && Serial.available(); ++lidos) {
     const char c = char(Serial.read());
+    if (c == '\x13') { pausar(); continue; }
+    if (c == '\x11') { permitir(); continue; }
     if (c == '!' || (movendo && c == 'x')) { interromper(CANCELADO); break; }
     if (movendo) continue; // sem prints nem comandos novos durante o trajeto
     if (c == '\r' || c == '\n') {
@@ -327,7 +367,7 @@ void loop() {
       else excesso = true;
     }
   }
-  atualizarMovimento();
+  if (!Serial.available()) atualizarMovimento();
   atualizarCalculo();
   if (evento != NENHUM) {
     if (evento == CONCLUIDO) Serial.println(F("TRAJETO DE PULSOS CONCLUIDO; posicao fisica nao medida."));

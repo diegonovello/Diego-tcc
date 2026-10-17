@@ -12,6 +12,38 @@ Esta é uma **nova versão separada**. `cinematica_xy/` continua sendo a simula�
 - `ModeloPlanar.h` e `Transmissao.h`: geometria vertical e transmissão cumulativa.
 - `validar_modelo.py`: referência numérica desktop.
 - `validar_firmware.cjs`: testes do HEX no emulador AVR8js; não conecta ao Arduino.
+- `painel_espaco.py`: painel USB no computador; requer Python com Tkinter e `pyserial`.
+
+## ESPAÇO mantido: regra obrigatória desta versão
+
+`mover` agora deixa o trajeto **pausado**, sem pulsos. Fechar o Monitor Serial,
+instalar `python -m pip install pyserial` e executar `python painel_espaco.py`.
+Selecionar a porta do Uno, conectar e aguardar 2,5 s. A conexão pode reiniciar
+o Uno: conferir a inicialização e repetir referência/armação manualmente.
+Enviar os comandos pela caixa do painel, um por vez, e revisar a prévia.
+Depois de `mover`, clicar na área cinza e **manter ESPAÇO pressionado**.
+Soltar a tecla, tirar o cursor dessa área ou perder o foco pausa a emissão.
+Para retomar, voltar à área e pressionar novamente; a rampa reinicia lentamente.
+ESC ou o botão ABORTAR envia `!`, desarma e invalida a referência.
+
+Velocidade inicial **2 pulsos/s**, máxima **15 pulsos/s**, aceleração **4 pulsos/s²**.
+São limites dos pulsos, não da velocidade cartesiana. Mantém M1 → M2 → M3,
+pula motores sem deslocamento e aguarda pelo menos 1 s entre etapas/retomadas.
+Drivers continuam energizados, inclusive na pausa: conferir a corrente de retenção.
+
+O painel envia byte `0x11` a cada 50 ms enquanto a tecla está mantida; `0x13`
+solicita pausa ao soltar. Sem renovação por **150 ms**, o firmware pausa também.
+Não usar controle de fluxo XON/XOFF: esses bytes são comandos deste protocolo.
+Espaço digitado no Monitor Serial **não substitui** o painel: ele não informa
+o evento de soltar a tecla. Pausa conserva o destino e os contadores comandados;
+não comprova posição real. Tempo limite de 300 s considera apenas tempo ativo.
+
+**Não há garantia de parada instantânea:** eventos do sistema, USB e processamento
+têm latência; um pulso já iniciado é completado, e há inércia/oscilação mecânica.
+A expiração só funciona com o firmware executando normalmente; travamento do
+microcontrolador não é coberto. Usar corte físico independente e suporte do robô.
+Testar soltar, perda de foco e perda de comunicação primeiro sem potência.
+Recompilar e gravar esta versão no Uno: alterar os arquivos não atualiza a placa.
 
 ## Bloqueios de partida
 
@@ -81,14 +113,14 @@ mover
 - Após qualquer aborto, não há continuação automática: o programa desarma e exige reposicionamento/conferência manual e nova referência.
 - Um pulso já iniciado é encerrado respeitando a largura mínima. Não há rampa no aborto; ele pode provocar perda de passos, oscilação ou movimento residual.
 - Durante o movimento, as demais entradas são ignoradas e não entram em fila. `estado`, `config` e mensagens longas só são tratados fora do trajeto, para não atrasar a temporização.
-- A perda da conexão USB não é monitorada e não garante parada. Usar a intertrava e o corte físico apropriados. Abrir o Monitor Serial pode reiniciar o Uno e perder a referência.
+- A ausência de heartbeat por 150 ms pausa pulsos enquanto o firmware executa normalmente; não é garantia de parada mecânica nem cobre travamento do Uno. Usar intertrava e corte físico independente. Abrir outra conexão serial pode reiniciar o Uno e perder a referência.
 
 ## Parâmetros iniciais de software
 
 - Saídas PUL− ativas em LOW, repouso HIGH; pulso ativo nominal de pelo menos 40 µs, direção estabilizada por 100 µs.
-- Rampa discreta independente: velocidade inicial de 8 e máxima de 60 pulsos/s; aceleração de 20 pulsos/s². Somente um motor recebe pulsos por etapa.
+- Rampa discreta independente: velocidade inicial de 2 e máxima de 15 pulsos/s; aceleração de 4 pulsos/s². Somente um motor recebe pulsos por etapa.
 - Limite absoluto de ±600 pulsos por motor e deslocamento máximo de 600 pulsos por motor/comando. São limites preliminares de software, não limites mecânicos calibrados.
-- Tempo máximo de 120 s por comando. Não há recuperação de atrasos por rajadas de pulsos.
+- Tempo máximo de 300 s ativos por comando, excluindo pausas. Não há recuperação de atrasos por rajadas de pulsos.
 
 O manual DM556T V4 especifica largura mínima de 2,5 µs e antecedência de DIR de 5 µs. O software adota margens maiores, mas a temporização e os níveis devem ser conferidos no hardware real. Fonte: [manual do fabricante](https://www.omc-stepperonline.com/download/DM556T_V4.0.pdf).
 

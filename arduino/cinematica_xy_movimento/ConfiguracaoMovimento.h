@@ -19,12 +19,13 @@ constexpr uint8_t INTERTRAVA_PIN = 8;
 constexpr uint32_t PULSO_US = 40; // LOW ativo >=40 us; nunca encurtar no aborto
 constexpr uint32_t DIR_ESPERA_US = 100;
 constexpr uint32_t PAUSA_ENTRE_MOTORES_US = 1000000UL; // sem pulsos entre etapas; mantem torque
-constexpr float VELOCIDADE_INICIAL = 8.0f; // pulsos/s do unico motor em movimento
-constexpr float VELOCIDADE_MAXIMA = 60.0f; // cada motor <= este limite
-constexpr float ACELERACAO = 20.0f; // pulsos/s^2; rampa independente por motor
+constexpr float VELOCIDADE_INICIAL = 2.0f; // pulsos/s; reinicia lentamente apos pausa
+constexpr float VELOCIDADE_MAXIMA = 15.0f; // somente um motor por vez
+constexpr float ACELERACAO = 4.0f; // pulsos/s^2; rampa independente por motor
+constexpr uint32_t PERMISSAO_MS = 150; // heartbeat do PC a cada 50 ms; expirar = pausar
 constexpr int32_t LIMITE_ABSOLUTO = 600; // por motor, relativo ao corpo reto
 constexpr uint32_t LIMITE_DELTA = 600; // por motor e por comando
-constexpr uint32_t TEMPO_MAXIMO_MS = 120000;
+constexpr uint32_t TEMPO_MAXIMO_MS = 300000; // tempo ATIVO acumulado; pausa nao conta
 inline bool confirmada() {
   return GEOMETRIA_CONFIRMADA && SENTIDOS_CONFIRMADOS && RETORNO_E_TENSAO_CONFIRMADOS && FONTE_CONFIRMADA;
 }

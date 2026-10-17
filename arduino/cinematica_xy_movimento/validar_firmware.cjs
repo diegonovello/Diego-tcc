@@ -26,7 +26,7 @@ function machine(file) {
   const b = new AVRIOPort(cpu,portBConfig), d = new AVRIOPort(cpu,portDConfig);
   const uart = new AVRUSART(cpu,usart0Config,16000000);
   b.setPin(0,false); // D8: contato NC fechado
-  let output='', capture=false;
+  let output='', capture=false, held=false, nextHeartbeat=0;
   const counts=[0,0,0], starts=[null,null,null], last=[null,null,null];
   const order=[];
   let minWidth=Infinity, minPeriod=Infinity;
@@ -55,6 +55,9 @@ function machine(file) {
     const end=cpu.cycles+seconds*16000000;
     while(!condition()) {
       if(cpu.cycles>=end) throw Error('Timeout AVR: '+output.slice(-600));
+      if(held && cpu.cycles>=nextHeartbeat && !uart.rxBusy) {
+        uart.writeByte(0x11); nextHeartbeat=cpu.cycles+800000;
+      }
       avrInstruction(cpu); cpu.tick();
     }
   }
@@ -75,6 +78,7 @@ function machine(file) {
   until(()=>output.includes('Verificar confirmacoes em config.')); run(.05);
   capture=true;
   return {cpu,b,d,uart,counts,starts,order,until,run,send,expectCommand,
+          hold(value){held=value;nextHeartbeat=cpu.cycles;},
           get output(){return output;}, clear(){output='';},
           get minWidth(){return minWidth/16;},get minPeriod(){return minPeriod/16;}};
 }
@@ -109,7 +113,20 @@ for(const [n,expected] of [[3,[0,0,84]],[4,[42,127,190]],[6,[127,84,169]],[1,[0,
   m.order.length=0;
   m.expectCommand('caso '+n,'PREVIA');
   m.clear(); m.send('mover\n');
-  m.until(()=>m.output.includes('TRAJETO DE PULSOS CONCLUIDO'),60); m.run(.04);
+  m.run(.5); assert.deepEqual(m.counts,baseline,'mover sozinho nao pode emitir pulsos');
+  m.hold(true);
+  if(n===3) {
+    m.until(()=>m.counts[2]>=3,6);
+    m.hold(false); m.send('\x13'); m.run(.05);
+    const paused=[...m.counts]; m.run(.7); assert.deepEqual(m.counts,paused,'soltar pausa');
+    assert(m.starts.every(x=>x===null));
+    m.hold(true); m.until(()=>m.counts[2]>paused[2],4);
+    m.hold(false); m.run(.2); // USB perdida: sem enviar PAUSE
+    const expired=[...m.counts]; m.run(.7); assert.deepEqual(m.counts,expired,'heartbeat vencido pausa');
+    m.hold(true);
+    console.log('PASS: mover aguarda tecla; soltar pausa; perda heartbeat pausa; pressionar retoma.');
+  }
+  m.until(()=>m.output.includes('TRAJETO DE PULSOS CONCLUIDO'),120); m.hold(false); m.run(.04);
   assert.deepEqual(m.counts,expected,'destinos reais nos GPIO, caso '+n);
   assert(m.starts.every(x=>x===null),'pulso nao encerrado');
   assert.deepEqual(m.order,[0,1,2].filter(i=>expected[i]!==baseline[i]),'ordem deve ser M1, M2, M3');
@@ -123,15 +140,16 @@ for(const [n,expected] of [[3,[0,0,84]],[4,[42,127,190]],[6,[127,84,169]],[1,[0,
   }
 }
 assert(m.minWidth>=40,'pulso ativo menor que 40 us');
-assert(m.minPeriod>=16000,'frequencia acima do limite conservador');
+assert(m.minPeriod>=66666,'frequencia acima de 15 pulsos/s');
 console.log(`PASS: menor LOW=${m.minWidth.toFixed(2)} us; menor periodo=${m.minPeriod.toFixed(2)} us.`);
 
 m=machine(unlockedFile);
 m.expectCommand('referenciar RETO','Referencia MANUAL aceita.');
 m.expectCommand('armar','ARMADO.');
 m.expectCommand('caso 2','PREVIA'); m.send('mover\n');
+m.hold(true);
 m.until(()=>m.counts.some(x=>x!==0),3);
-m.send('!'); m.until(()=>m.output.includes('Referencia INVALIDADA'),2); m.run(.05);
+m.hold(false); m.send('!'); m.until(()=>m.output.includes('Referencia INVALIDADA'),2); m.run(.05);
 const stopped=[...m.counts]; m.run(.4); assert.deepEqual(m.counts,stopped);
 assert(m.starts.every(x=>x===null));
 m.expectCommand('mover','BLOQUEADO');
@@ -140,6 +158,7 @@ console.log('PASS: ! encerra pulso, para, desarma e exige nova referencia.');
 m.expectCommand('referenciar RETO','Referencia MANUAL aceita.');
 m.expectCommand('armar','ARMADO.');
 m.expectCommand('caso 6','PREVIA'); m.send('mover\n');
+m.hold(true);
 const baseline=[...m.counts]; m.until(()=>m.counts.some((v,i)=>v!==baseline[i]),3);
 m.b.setPin(0,true); m.clear();
 m.until(()=>m.output.includes('intertrava aberta.'),2); m.run(.1);
