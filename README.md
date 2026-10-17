@@ -49,7 +49,7 @@ Os materiais anteriores de nove juntas independentes foram preservados. A implem
 | `arduino/cinematica_xy/ModeloPlanar.h` | Cinemática direta, Jacobiano 2x3 e solução amortecida para três segmentos de três juntas. |
 | `arduino/cinematica_xy/Transmissao.h` | Aproximação cumulativa do recolhimento dos cabos e conversão em destinos nominais de passos. |
 | `arduino/cinematica_xy/validar_modelo.py` | Referência numérica desktop para conferir Jacobiano, inversa e transmissão; não executa o binário AVR. |
-| `src/tcc2/desenhar_posicoes.py` | Gera os seis desenhos planares usados no TCC, em PNG e PDF. |
+| `src/tcc2/desenhar_posicoes.py` | Gera seis figuras individuais dos casos planares usados no TCC, cada uma em PNG e PDF. |
 | `figuras/tcc2/` (saída local) | Pasta criada ao executar o gerador; as imagens não são versionadas. |
 
 ### Reproduzir a conferência numérica e os desenhos
@@ -62,7 +62,7 @@ python arduino/cinematica_xy/validar_modelo.py
 python src/tcc2/desenhar_posicoes.py
 ```
 
-O último comando cria localmente `figuras/tcc2/posicoes_referencia_planar.png` e `.pdf`; somente o código gerador é disponibilizado no repositório, sem as imagens prontas. Não precisa de Arduino ou motor. Os casos são `(0;0;0)`, `(20;20;20)`, `(0;0;20)`, `(10;20;15)`, `(-10;-20;-15)` e `(30;-10;20)` em graus de flexão total dos segmentos. Esses valores não são coordenadas X/Y nem ângulos dos motores.
+O último comando cria localmente seis figuras separadas, de `figuras/tcc2/posicao_caso_01.png` até `posicao_caso_06.png`, e os seis PDFs correspondentes. Não é gerada uma montagem única com os seis casos. Somente o código gerador é disponibilizado no repositório, sem as imagens prontas. Não precisa de Arduino ou motor. Os casos são `(0;0;0)`, `(20;20;20)`, `(0;0;20)`, `(10;20;15)`, `(-10;-20;-15)` e `(30;-10;20)` em graus de flexão total dos segmentos. Esses valores não são coordenadas X/Y nem ângulos dos motores.
 
 ### Abrir e conferir os sketches
 
