@@ -6,7 +6,7 @@ Este repositorio contem os codigos usados para a modelagem cinematica direta e i
 
 - `src/`: scripts Python da modelagem cinematica.
 - `notebooks/`: notebooks Jupyter usados no desenvolvimento e validacao.
-- `figuras/`: imagens geradas para visualizacao das poses e resultados.
+- As figuras de referência podem ser geradas localmente pelos scripts; os arquivos PNG e PDF do TCC II não são distribuídos no repositório.
 - `docs/`: relatorio em PDF da cinematica direta e inversa.
 
 ## Parametros principais
@@ -50,7 +50,7 @@ Os materiais anteriores de nove juntas independentes foram preservados. A implem
 | `arduino/cinematica_xy/Transmissao.h` | Aproximação cumulativa do recolhimento dos cabos e conversão em destinos nominais de passos. |
 | `arduino/cinematica_xy/validar_modelo.py` | Referência numérica desktop para conferir Jacobiano, inversa e transmissão; não executa o binário AVR. |
 | `src/tcc2/desenhar_posicoes.py` | Gera os seis desenhos planares usados no TCC, em PNG e PDF. |
-| `figuras/tcc2/` | Resultados gráficos reproduzíveis do script, não fotografias ou ensaios físicos. |
+| `figuras/tcc2/` (saída local) | Pasta criada ao executar o gerador; as imagens não são versionadas. |
 
 ### Reproduzir a conferência numérica e os desenhos
 
@@ -62,7 +62,7 @@ python arduino/cinematica_xy/validar_modelo.py
 python src/tcc2/desenhar_posicoes.py
 ```
 
-O último comando salva `figuras/tcc2/posicoes_referencia_planar.png` e `.pdf`. Não precisa de Arduino ou motor. Os casos são `(0;0;0)`, `(20;20;20)`, `(0;0;20)`, `(10;20;15)`, `(-10;-20;-15)` e `(30;-10;20)` em graus de flexão total dos segmentos. Esses valores não são coordenadas X/Y nem ângulos dos motores.
+O último comando cria localmente `figuras/tcc2/posicoes_referencia_planar.png` e `.pdf`; somente o código gerador é disponibilizado no repositório, sem as imagens prontas. Não precisa de Arduino ou motor. Os casos são `(0;0;0)`, `(20;20;20)`, `(0;0;20)`, `(10;20;15)`, `(-10;-20;-15)` e `(30;-10;20)` em graus de flexão total dos segmentos. Esses valores não são coordenadas X/Y nem ângulos dos motores.
 
 ### Abrir e conferir os sketches
 
