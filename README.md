@@ -83,6 +83,15 @@ O sketch [cinematica_xy_movimento](arduino/cinematica_xy_movimento/) preserva os
 
 **Antes de usar:** ler o [guia completo](arduino/cinematica_xy_movimento/LEIA_ME.md). As quatro confirmações em `ConfiguracaoMovimento.h` são distribuídas como `false`; só devem ser alteradas depois de verificar fisicamente geometria, sentidos, retorno/tensão e capacidade da fonte. Os drivers parados ainda podem consumir corrente; seu torque não é cortado automaticamente. Há uma intertrava lógica por contato NC entre D8 e GND; ela não substitui o corte físico independente da potência.
 
+**Atualização — ESPAÇO mantido:** `mover` agora apenas deixa o trajeto pausado.
+Usar [painel_espaco.py](arduino/cinematica_xy_movimento/painel_espaco.py), com Python/Tkinter e `pyserial`;
+o Monitor Serial deve estar fechado. Clicar na área de controle e manter ESPAÇO.
+Soltar, sair da área ou perder foco pausa os pulsos; ausência de heartbeat por
+150 ms também pausa enquanto o firmware funciona normalmente. Retomada exige nova pressão.
+Velocidade inicial 2 e máxima 15 pulsos/s, sempre M1 → M2 → M3.
+Não é parada mecânica instantânea nem emergência certificada. Regravar o Uno
+para aplicar a atualização. O painel também foi desenvolvido com auxílio de IA.
+
 O arquivo [VERIFICACAO.md](arduino/cinematica_xy_movimento/VERIFICACAO.md) registra a compilação e os testes dos HEXs em AVR8js. A emulação conferiu contagens de GPIO e bloqueios, mas não valida driver, motores ou posicionamento físico. O código não executa PI, não lê encoder e não realiza homing automático. Nenhum firmware foi gravado automaticamente no Arduino.
 
 ### Uso de IA e limites
