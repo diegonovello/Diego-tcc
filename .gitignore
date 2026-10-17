@@ -8,3 +8,4 @@ build/
 *.elf
 *.o
 figuras/tcc2/
+node_modules/
