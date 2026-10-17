@@ -37,3 +37,46 @@ Ou abra os notebooks da pasta `notebooks/` no Jupyter, VS Code ou ambiente equiv
 ## Observacao
 
 Os materiais de aula do professor foram usados como referencia metodologica para a formulacao com matrizes homogeneas, mas nao foram incluidos neste repositorio.
+
+## Implementação preliminar do TCC II
+
+Os materiais anteriores de nove juntas independentes foram preservados. A implementação a seguir agrupa as juntas em três segmentos e utiliza a convenção de ensaio vertical: base na origem, X lateral e Y para cima. A configuração reta tem ponta em `(0; 136,53)` mm. O programa Arduino recebe **X;Y em centímetros**, não em milímetros.
+
+| Arquivo/pasta | Finalidade |
+| --- | --- |
+| `arduino/teste_bancada_uno/teste_bancada_uno.ino` | Teste lento com Uno e DM556T: seleciona um motor e gera 10 ou 100 pulsos, sem cinemática ou PI. |
+| `arduino/cinematica_xy/cinematica_xy.ino` | Entrada cartesiana e cálculo da cinemática inversa, cabos e passos ideais; **não gera pulsos**. |
+| `arduino/cinematica_xy/ModeloPlanar.h` | Cinemática direta, Jacobiano 2x3 e solução amortecida para três segmentos de três juntas. |
+| `arduino/cinematica_xy/Transmissao.h` | Aproximação cumulativa do recolhimento dos cabos e conversão em destinos nominais de passos. |
+| `arduino/cinematica_xy/validar_modelo.py` | Referência numérica desktop para conferir Jacobiano, inversa e transmissão; não executa o binário AVR. |
+| `src/tcc2/desenhar_posicoes.py` | Gera os seis desenhos planares usados no TCC, em PNG e PDF. |
+| `figuras/tcc2/` | Resultados gráficos reproduzíveis do script, não fotografias ou ensaios físicos. |
+
+### Reproduzir a conferência numérica e os desenhos
+
+Na raiz do repositório, com Python 3.10 ou superior:
+
+```bash
+python -m pip install -r src/tcc2/requirements.txt
+python arduino/cinematica_xy/validar_modelo.py
+python src/tcc2/desenhar_posicoes.py
+```
+
+O último comando salva `figuras/tcc2/posicoes_referencia_planar.png` e `.pdf`. Não precisa de Arduino ou motor. Os casos são `(0;0;0)`, `(20;20;20)`, `(0;0;20)`, `(10;20;15)`, `(-10;-20;-15)` e `(30;-10;20)` em graus de flexão total dos segmentos. Esses valores não são coordenadas X/Y nem ângulos dos motores.
+
+### Abrir e conferir os sketches
+
+Na Arduino IDE, abrir cada `.ino` na sua própria pasta e selecionar **Arduino Uno**. Manter `ModeloPlanar.h` e `Transmissao.h` junto de `cinematica_xy.ino`. Com Arduino CLI e o núcleo AVR instalados, a compilação pode ser reproduzida por:
+
+```bash
+arduino-cli compile --fqbn arduino:avr:uno arduino/teste_bancada_uno
+arduino-cli compile --fqbn arduino:avr:uno arduino/cinematica_xy
+```
+
+O programa cartesiano usa 115200 baud e final de linha. Exemplos: `0;13.653` para a ponta reta e `1.04480;13.51037` para o alvo do caso 3. A inversa pode encontrar outros ângulos para a mesma ponta. As instruções e limitações detalhadas estão em [LEIA_ME.md](arduino/cinematica_xy/LEIA_ME.md).
+
+### Uso de IA e limites
+
+**Os programas e scripts acrescentados para o TCC II foram elaborados com auxílio de inteligência artificial — Codex (OpenAI)**, a partir dos dados fornecidos pelo autor. A mesma assistência foi utilizada na geração dos desenhos e na redação explicativa correspondente. O escopo e as limitações estão em [Uso de IA no TCC II](docs/USO_DE_IA_TCC2.md).
+
+Os resultados são teóricos. Os testes numéricos e a compilação não demonstram precisão física. Redução, raio efetivo, afastamento, retorno e tensão dos cabos ainda exigem calibração. A gravidade não é modelada. O teste de bancada gera movimento real; o comando de parada não desenergiza o driver e não é parada de emergência. Conferir a revisão do DM556T, a ligação dos oito fios e os limites elétricos antes de energizar.
