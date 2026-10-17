@@ -1,0 +1,7 @@
+{
+  "name": "tcc-uno-movimento-testes",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": { "test:firmware": "node validar_firmware.cjs" },
+  "devDependencies": { "avr8js": "0.21.1" }
+}
