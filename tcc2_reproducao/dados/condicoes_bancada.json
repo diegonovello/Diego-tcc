@@ -1,0 +1,12 @@
+{
+  "tensao_fonte_V": 24,
+  "corrente_driver_informada_A": 2.5,
+  "convencao_corrente": "pico/RMS nao informado",
+  "motor": "57HS112-3004A08-D21",
+  "pulsos_por_volta": 400,
+  "elemento_tracao": "cordao",
+  "diametro_mm": 3,
+  "plano_ensaio": "horizontal",
+  "contato": "caneta sobre papel",
+  "origem_limite_angular": "parametro de projeto informado; origem fisica pendente"
+}

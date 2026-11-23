@@ -1,0 +1,1 @@
+Substitua somente resultados_medidos.tex e discussao_estatisticas.tex na pasta correspondente do projeto. Faça backup antes. Nao alterei labels, comandos, numeros nem tabelas de dados. A declaracao de IA e uma sugestao separada; confirme os usos antes de inserir no arquivo do Capitulo 8. Compile main.tex duas vezes no TeXstudio.

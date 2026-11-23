@@ -1,0 +1,36 @@
+\clearpage\refstepcounter{chapter}
+\chapter*{Apêndice \thechapter{} - Resultados detalhados da reanálise}
+\addcontentsline{toc}{chapter}{Apêndice \thechapter{} - Resultados detalhados da reanálise}
+\label{ap:detalhes_reanalise}
+\section{Definição do ajuste e do conjunto de avaliação}
+As análises utilizam os 30 pontos das posições 2 a 7 por condição (cinco baterias de seis posições), tomando como origem relativa o centro inicial da própria bateria. Os retornos foram reservados à análise de retorno. As posições de calibração dos offsets coincidem parcialmente com as de avaliação. As referências geométricas seguem o marcador a 445~mm, sem alteração das coordenadas experimentais definitivas.
+Os vetores são $\mathbf P_{bp}=\mathbf p_{m,bp}-\mathbf p_{m,b1}$ e $\mathbf Q_p=\mathbf p_{t,p}-\mathbf p_{t,1}$. A rotação única por condição minimiza $\sum_{b,p}\|\mathbf P_{bp}R(\theta)-\mathbf Q_p\|^2$, impondo uma rotação própria no plano, com $-0{,}2\leq\theta\leq0{,}2$ rad. O ganho escalar $g$ atua nas três flexões por $\boldsymbol\beta_{\mathrm{ef}}=g\boldsymbol\beta$, antes da cinemática direta, com $0{,}5\leq g\leq 1{,}5$. A otimização conjunta minimiza a mesma soma de quadrados, com alvos $\mathbf Q_p(g)$.
+\section{Resultados do ajuste e da validação cruzada}
+\begin{table}[H]\centering
+\caption{Erros planares médios de ajuste e validação cruzada por condição (cm)}\label{tab:reanalise-definitiva}
+\small\begin{tabular}{lrr}\toprule
+Indicador & Sem offsets & Com offsets\\\midrule
+Nominal relativo ao centro & 4,48 & 4,30\\
+Após rotação, nos dados ajustados & 4,44 & 4,28\\
+Rotação, validação leave-one-out & 4,75 & 4,41\\
+Rotação e ganho, nos dados ajustados & 2,53 & 1,96\\
+Rotação e ganho, leave-one-out & 3,47 & 2,76\\
+\bottomrule\end{tabular}
+\par\smallskip{\footnotesize Fonte: recálculo a partir das cinco baterias definitivas por condição; cada posição retida na validação foi excluída do ajuste nas cinco baterias.}
+\end{table}
+Na condição sem offsets, a rotação estimada nos próprios dados foi de 0,75$^\circ$. O ajuste conjunto de rotação e ganho produziu rotação de 0,82$^\circ$ e $g=1,12$.
+Na condição com offsets, a rotação estimada nos próprios dados foi de -0,90$^\circ$. O ajuste conjunto de rotação e ganho produziu rotação de -0,86$^\circ$ e $g=1,12$.
+A validação \textit{leave-one-out} foi feita por posição: em cada uma das seis rodadas excluíram-se as cinco leituras da posição retida, estimaram-se os parâmetros nas outras cinco posições e avaliou-se exclusivamente a posição excluída. O ponto inicial foi usado somente para definir os deslocamentos relativos. O procedimento avalia transferência entre as posições já estudadas, não generalização a configurações novas nem a validade independente dos offsets.
+\section{Bootstrap por bateria}
+Foram produzidas 10.000 réplicas com semente 20261122, amostrando cinco baterias completas com reposição, independentemente em cada condição. Na comparação após rotação, a rotação foi reestimada a cada réplica. Os intervalos percentis de 95\% são descritivos e não capturam erros sistemáticos na origem, alinhamento ou seleção prévia dos offsets.
+\begin{table}[H]\centering
+\caption{Redução do erro sem menos com offsets, por indicador, com bootstrap por bateria}\label{tab:bootstrap-definitivo}
+\small\begin{tabular}{lrrr}\toprule
+Indicador & Redução observada (cm) & IC 95\% (cm) & IC 95\% (\%)\\\midrule
+Absoluto calculado & 0,42 & [0,26; 0,57] & [6,21; 12,67]\\
+Relativo ao centro & 0,18 & [-0,04; 0,38] & [-0,92; 8,11]\\
+Relativo após rotação ajustada & 0,16 & [-0,07; 0,37] & [-1,73; 7,96]\\
+\bottomrule\end{tabular}\end{table}
+O erro absoluto depende da correspondência entre as origens experimental e teórica, que foi declarada pelo autor como mantida. O ganho ajustado com offsets incorpora seu efeito e não representa identificação independente de parâmetros da transmissão. A reamostragem não corrige a reutilização das posições de calibração na avaliação.
+\section{Reprodutibilidade}
+O arquivo \texttt{dados/reanalise\_atualizada/resultados\_reanalise.json} contém os parâmetros e indicadores não arredondados; \texttt{erros\_por\_leitura.csv} permite auditar as 60 observações. O script \texttt{reanalisar\_definitivos.py} executa toda a reanálise.

@@ -1,0 +1,93 @@
+{
+  "tabela_reproduzida": true,
+  "constantes_entrega": {
+    "pulso_folga_motor_esq1": 5,
+    "pulso_folga_motor_esq2": 5,
+    "pulso_folga_motor_esq3": 5,
+    "pulso_folga_motor_direita1": 65,
+    "pulso_folga_motor_direita2": 5,
+    "pulso_folga_motor_direita3": 5
+  },
+  "constantes_historico": {
+    "pulso_folga_motor_esq1": 25,
+    "pulso_folga_motor_esq2": 5,
+    "pulso_folga_motor_esq3": 5,
+    "pulso_folga_motor_direita1": 5,
+    "pulso_folga_motor_direita2": 5,
+    "pulso_folga_motor_direita3": 5
+  },
+  "parametros_relato_m1": {
+    "esquerda": 5,
+    "direita": 65
+  },
+  "parametros_coleta_confirmados_pelo_autor": true,
+  "binario_da_coleta_disponivel": false,
+  "verificacoes": [
+    {
+      "posicao": 2,
+      "previsto_cm": [
+        2.7315191299336163,
+        -4.461641644344546
+      ],
+      "medido_cm": [
+        -0.07999999999999474,
+        2.049999999999997
+      ]
+    },
+    {
+      "posicao": 3,
+      "previsto_cm": [
+        -1.2146693691680497,
+        -0.8913338563827793
+      ],
+      "medido_cm": [
+        -2.1400000000000006,
+        -0.44999999999999574
+      ]
+    },
+    {
+      "posicao": 4,
+      "previsto_cm": [
+        3.691254297366722,
+        -3.7845513173782166
+      ],
+      "medido_cm": [
+        -1.120000000000001,
+        1.9200000000000017
+      ]
+    },
+    {
+      "posicao": 5,
+      "previsto_cm": [
+        -1.3699385897116763,
+        -0.6621228330512636
+      ],
+      "medido_cm": [
+        -1.6800000000000033,
+        2.0400000000000063
+      ]
+    },
+    {
+      "posicao": 6,
+      "previsto_cm": [
+        -2.4680694875013707,
+        -3.9605067877791527
+      ],
+      "medido_cm": [
+        -1.0600000000000023,
+        -1.62
+      ]
+    },
+    {
+      "posicao": 7,
+      "previsto_cm": [
+        -0.21735560013446786,
+        -1.2799743730735589
+      ],
+      "medido_cm": [
+        -3.1799999999999997,
+        1.2000000000000002
+      ]
+    }
+  ]
+}

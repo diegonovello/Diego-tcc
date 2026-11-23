@@ -1,0 +1,47 @@
+{
+  "configuracoes": 15625,
+  "limite_junta_graus": 15,
+  "limite_segmento_graus": 45,
+  "suporte_fixo_mm": 15.0,
+  "extensao_ponta_mm": -20.0,
+  "segmentos_mm": [
+    150.0,
+    150.0,
+    150.0
+  ],
+  "juntas_equivalentes_mm": [
+    50.0,
+    50.0,
+    50.0,
+    50.0,
+    50.0,
+    50.0,
+    50.0,
+    50.0,
+    50.0
+  ],
+  "x_amostrado_mm": [
+    -344.8938528181287,
+    344.8938528181287
+  ],
+  "y_amostrado_mm": [
+    120.73969712740636,
+    445.0
+  ],
+  "distancia_radial_minima_mm": 349.2397327938816,
+  "extremo_negativo_mm": [
+    -327.70461775740057,
+    120.73969712740634
+  ],
+  "alvo_solicitado_mm": [
+    -212.4906613931,
+    100.0
+  ],
+  "alvo_solicitado_fora_limite_radial": true,
+  "hipoteses": [
+    "Tres juntas uniformes por segmento",
+    "Origem equivalente na saida dos cabos",
+    "Marcador recuado 20 mm da ponta fisica; suporte fixo de 15 mm",
+    "Sem colisoes, gravidade ou tensao dos cabos"
+  ]
+}

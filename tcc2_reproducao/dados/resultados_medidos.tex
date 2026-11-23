@@ -1,0 +1,51 @@
+\subsection{Comparação do erro de posicionamento}
+
+Os alvos teóricos foram expressos em centímetros e usados com a mesma precisão numérica nas duas condições. A Tabela~\ref{tab:erros-medidos} apresenta a média dos cinco erros individuais da Eq.~\eqref{eq:erro-posicionamento-experimental} e seu desvio-padrão amostral (DP). O DP descreve a dispersão dos erros entre as cinco baterias. Na coluna de variação, valores positivos indicam redução do erro com offsets e valores negativos indicam aumento.
+
+\begin{table}[H]\centering\caption{Erro planar por posição, em cm (cinco leituras por condição)}\label{tab:erros-medidos}\small\begin{tabular}{crrr}\toprule Posição & Sem ajuste: média (DP) & Com ajuste: média (DP) & Variação (\%)\\\midrule
+
+2 & 5,96 (0,15) & 4,77 (0,40) & 19,9\\
+
+3 & 0,57 (0,31) & 2,13 (0,25) & -273,5\\
+
+4 & 5,78 (0,33) & 3,87 (0,12) & 33,2\\
+
+5 & 2,06 (0,39) & 1,44 (0,30) & 30,3\\
+
+6 & 6,22 (0,46) & 6,76 (0,18) & -8,6\\
+
+7 & 5,56 (0,38) & 4,70 (0,22) & 15,5\\
+
+\bottomrule\end{tabular}\par\smallskip{\footnotesize Fonte: Elaborado pelo autor a partir dos registros dos ensaios.}\end{table}
+
+Considerando as posições 2 a 7, são 30 leituras por condição. O erro médio foi de 4,36 cm sem ajuste e 3,94 cm com ajuste, redução descritiva de 9,5\%. Essa comparação não isola a influência do reposicionamento inicial, do alinhamento, do tensionamento e da leitura. Os offsets foram selecionados em cinco tentativas qualitativas na posição 6 e cinco na posição 7, sem critério numérico documentado. Essas posições também entram na média de avaliação; portanto, a campanha não constitui uma validação independente em novas configurações.
+
+Sobre as mesmas 30 leituras, o RMSE planar foi de 4,89 cm sem offsets e 4,33 cm com offsets. Os vieses globais $(\overline e_X;\overline e_Y)$ foram $(2,59;-3,22)$ cm e $(1,05;-2,37)$ cm, respectivamente. Esses valores agregados complementam, mas não substituem, a análise por posição.
+
+Os ensaios independentes nas configurações $(15^\circ,15^\circ,15^\circ)$ e $(30^\circ,10^\circ,-10^\circ)$ não foram realizados. Essas configurações são propostas para uma campanha futura; não há erros experimentais a relatar para elas.
+
+\subsection{Exatidão de posicionamento e repetibilidade}
+
+\input{indicadores_ap_rp}
+
+Como informação complementar, a Tabela~\ref{tab:dispersao-medida} apresenta os desvios-padrão por eixo. Eles não equivalem ao indicador RP, que utiliza as distâncias individuais ao baricentro.
+
+\begin{table}[H]\centering\caption{Dispersão amostral das coordenadas entre baterias, em cm}\label{tab:dispersao-medida}\small\begin{tabular}{crrrr}\toprule & \multicolumn{2}{c}{Sem ajuste} & \multicolumn{2}{c}{Com ajuste}\\ Posição & $s_X$ & $s_Y$ & $s_X$ & $s_Y$\\\midrule
+
+2 & 0,29 & 0,20 & 0,41 & 0,26\\
+
+3 & 0,13 & 0,44 & 0,19 & 0,34\\
+
+4 & 0,30 & 0,19 & 0,22 & 0,38\\
+
+5 & 0,19 & 0,41 & 0,30 & 0,68\\
+
+6 & 0,23 & 0,52 & 0,25 & 0,19\\
+
+7 & 0,37 & 0,34 & 0,24 & 0,22\\
+
+\bottomrule\end{tabular}\par\smallskip{\footnotesize Fonte: Elaborado pelo autor a partir dos registros dos ensaios.}\end{table}
+
+A dispersão entre baterias inclui o reposicionamento manual, a variação dos movimentos e a leitura. Ela caracteriza a consistência do procedimento completo, sem constituir uma medida isolada da repetibilidade mecânica.
+
+Nos 30 retornos de cada condição, a distância ao centro inicial da própria bateria apresentou média de 0,54 cm e máximo de 1,40 cm sem ajuste; com ajuste, média de 0,29 cm e máximo de 1,20 cm. Houve variações tanto em X quanto em Y. Esses desvios devem ser distinguidos do afastamento do centro inicial em relação ao alvo (0;44,5) cm.
